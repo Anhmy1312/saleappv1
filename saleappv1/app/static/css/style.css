@@ -1,0 +1,181 @@
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 30px 20px;
+    background-color: #f1f5f9;
+    color: #1e293b;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+}
+
+h1, h2 {
+    margin-top: 0;
+    color: #1d4ed8;
+}
+
+h1 {
+    font-size: 30px;
+}
+
+h2 {
+    font-size: 26px;
+}
+
+a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #1e40af;
+    text-decoration: underline;
+}
+
+/* Danh mục ở trang chủ */
+.nav {
+    list-style: none;
+    padding: 0;
+    margin: 24px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.nav li a {
+    display: block;
+    padding: 12px 18px;
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.nav li a:hover {
+    background-color: #2563eb;
+    color: white;
+    text-decoration: none;
+}
+
+/* Biểu mẫu tìm kiếm */
+.search-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+input {
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+input:focus {
+    outline: 2px solid #93c5fd;
+    border-color: #2563eb;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    background-color: #2563eb;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+/* Bảng sản phẩm */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+}
+
+th, td {
+    padding: 14px 12px;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+}
+
+th {
+    background-color: #2563eb;
+    color: white;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+tbody tr:hover {
+    background-color: #eff6ff;
+}
+
+td img {
+    max-width: 100px;
+    height: auto;
+    border-radius: 6px;
+    object-fit: contain;
+}
+
+/* Ảnh ở trang chi tiết */
+.product-image {
+    display: block;
+    max-width: 100%;
+    width: 300px;
+    height: auto;
+    margin: 20px 0;
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 12px;
+    }
+
+    .container {
+        padding: 18px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .search-form {
+        flex-direction: column;
+    }
+
+    input, button {
+        width: 100%;
+    }
+
+    table {
+        font-size: 13px;
+    }
+
+    th, td {
+        padding: 8px 6px;
+    }
+}

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang Chủ - Bán Hàng Trực Tuyến</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>BÁN HÀNG TRỰC TUYẾN</h1>
+        <ul class="nav">
+            <li><a href="{{ url_for('products') }}">Tất cả</a></li>
+            {% for c in categories %}
+                <li>
+                    <a href="{{ url_for('products', category_id=c.id) }}">{{ c.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
