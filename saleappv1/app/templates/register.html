@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng ký tài khoản</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container" style="max-width: 500px;">
+        <h2>ĐĂNG KÝ TÀI KHOẢN</h2>
+
+        {% if err %}
+        <p style="color: red; font-weight: bold;">{{ err }}</p>
+        {% endif %}
+
+        <form action="{{ url_for('register') }}" method="post" enctype="multipart/form-data" class="search-form"
+            style="flex-direction: column;">
+            <div style="margin-bottom: 12px;">
+                <label>Họ và tên:</label><br>
+                <input type="text" name="name" required style="width: 100%; margin-top: 5px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label>Email:</label><br>
+                <input type="email" name="email" required style="width: 100%; margin-top: 5px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label>Tên đăng nhập:</label><br>
+                <input type="text" name="username" required style="width: 100%; margin-top: 5px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label>Mật khẩu:</label><br>
+                <input type="password" name="password" required style="width: 100%; margin-top: 5px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label>Ảnh đại diện (Avatar):</label><br>
+                <input type="file" name="avatar" style="width: 100%; margin-top: 5px;">
+            </div>
+            <button type="submit" style="width: 100%;">Đăng ký</button>
+        </form>
+        <p style="text-align: center; margin-top: 15px;">
+            Đã có tài khoản? <a href="{{ url_for('login') }}">Đăng nhập ngay</a> | <a href="{{ url_for('index') }}">Về
+                trang chủ</a>
+        </p>
+    </div>
+</body>
+
+</html>
