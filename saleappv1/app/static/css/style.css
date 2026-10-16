@@ -150,6 +150,23 @@ td img {
     object-fit: contain;
 }
 
+/* Thanh điều hướng trên cùng của các trang */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    font-weight: bold;
+}
+
+/* Nút xóa sản phẩm trong giỏ hàng */
+.btn-delete {
+    background-color: #dc2626;
+}
+
+.btn-delete:hover {
+    background-color: #b91c1c;
+}
+
 @media (max-width: 600px) {
     body {
         padding: 12px;

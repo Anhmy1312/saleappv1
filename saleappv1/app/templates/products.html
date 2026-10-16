@@ -1,19 +1,28 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <title>Quản Lý Sản Phẩm</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
     <div class="container">
+        <div class="topbar">
+            <a href="{{ url_for('index') }}"> Trang chủ</a>
+            <a href="{{ url_for('cart') }}"> Giỏ hàng (<span id="cart-counter">{{ cart_count }}</span>)</a>
+        </div>
         <h2>QUẢN LÝ SẢN PHẨM</h2>
-        
+
         <!-- Form tìm kiếm sản phẩm theo tên & khoảng giá -->
         <form action="{{ url_for('products') }}" method="get" class="search-form">
-            <input type="text" name="keyword" placeholder="Tìm theo tên..." value="{{ request.args.get('keyword', '') }}">
-            <input type="number" name="from_price" placeholder="Giá từ..." value="{{ request.args.get('from_price', '') }}">
-            <input type="number" name="to_price" placeholder="Giá đến..." value="{{ request.args.get('to_price', '') }}">
+            <input type="text" name="keyword" placeholder="Tìm theo tên..."
+                value="{{ request.args.get('keyword', '') }}">
+            <input type="number" name="from_price" placeholder="Giá từ..."
+                value="{{ request.args.get('from_price', '') }}">
+            <input type="number" name="to_price" placeholder="Giá đến..."
+                value="{{ request.args.get('to_price', '') }}">
             <button type="submit">Tìm</button>
         </form>
 
@@ -23,6 +32,7 @@
                 <th>Tên sản phẩm</th>
                 <th>Mô tả</th>
                 <th>Giá bán</th>
+                <th>Thao tác</th>
             </tr>
             {% for p in products %}
             <tr>
@@ -33,14 +43,50 @@
                 </td>
                 <td>{{ p.description }}</td>
                 <td>{{ "{:,.0f}".format(p.price) }} VNĐ</td>
+                <td>
+                    <button class="btn-cart" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ p.price }}"
+                        data-image="{{ p.image }}">Thêm vào giỏ</button>
+                </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="4">Không tìm thấy sản phẩm nào!</td>
+                <td colspan="5">Không tìm thấy sản phẩm nào!</td>
             </tr>
             {% endfor %}
         </table>
         <p><a href="{{ url_for('index') }}">⬅ Quay lại trang chủ</a></p>
     </div>
+
+    <script>
+        document.querySelectorAll('.btn-cart').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch('/api/cart', {
+                    method: 'post',
+                    body: JSON.stringify({
+                        "id": btn.dataset.id,
+                        "name": btn.dataset.name,
+                        "price": btn.dataset.price,
+                        "image": btn.dataset.image
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        console.info(data);
+                        alert("Đã thêm sản phẩm vào giỏ hàng thành công!");
+                        let cartCounter = document.getElementById('cart-counter');
+                        if (cartCounter) {
+                            cartCounter.innerText = data.total_quantity;
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Lỗi:", err);
+                    });
+            });
+        });
+    </script>
 </body>
+
 </html>

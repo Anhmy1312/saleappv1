@@ -45,3 +45,22 @@ class User(db.Model):
 
     def __str__(self):
         return self.username
+
+
+class Receipt(db.Model):
+    __tablename__ = "receipt"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_date = Column(DateTime, default=datetime.now)
+    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
+    user = relationship("User", backref="receipts")
+    details = relationship("ReceiptDetail", backref="receipt", lazy=True)
+
+
+class ReceiptDetail(db.Model):
+    __tablename__ = "receipt_detail"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    receipt_id = Column(Integer, ForeignKey(Receipt.id), nullable=False)
+    product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
+    product = relationship("Product")
+    quantity = Column(Integer, default=1)
+    unit_price = Column(Float, default=0)

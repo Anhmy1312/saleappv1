@@ -188,6 +188,94 @@ def secret():
     return f"Chào mừng bạn đến trang bí mật, {session['user']['name']}! Bạn đã đăng nhập thành công."
 
 
+# YC1: Thêm sản phẩm vào giỏ hàng lưu trên session
+@app.route("/api/cart", methods=["POST"])
+def add_to_cart():
+    data = request.json
+    product_id = str(data.get("id"))
+    name = data.get("name")
+    price = float(data.get("price", 0))
+    image = data.get("image")
+
+    # Lấy giỏ hàng từ session hiện tại, nếu chưa có thì tạo dict rỗng
+    cart = session.get("cart", {})
+
+    if product_id in cart:
+        # Nếu sản phẩm đã có trong giỏ -> tăng số lượng lên 1
+        cart[product_id]["quantity"] += 1
+    else:
+        cart[product_id] = {
+            "id": product_id,
+            "name": name,
+            "price": price,
+            "image": image,
+            "quantity": 1,
+        }
+
+    session["cart"] = cart
+
+    # Tính tổng số lượng sản phẩm trong giỏ hàng để trả về cập nhật giao diện
+    total_quantity = sum(item["quantity"] for item in cart.values())
+    total_amount = sum(item["quantity"] * item["price"] for item in cart.values())
+
+    return {
+        "status": 200,
+        "total_quantity": total_quantity,
+        "total_amount": total_amount,
+    }
+
+
+# YC1: Trang giỏ hàng - hiển thị, cập nhật số lượng, xóa sản phẩm
+@app.route("/cart")
+def cart():
+    cart_data = session.get("cart", {})
+    total_quantity = sum(item["quantity"] for item in cart_data.values())
+    total_amount = sum(item["quantity"] * item["price"] for item in cart_data.values())
+    return render_template(
+        "cart.html",
+        cart=cart_data,
+        total_quantity=total_quantity,
+        total_amount=total_amount,
+    )
+
+
+@app.route("/api/cart/<product_id>", methods=["PUT"])
+def update_cart_item(product_id):
+    cart_data = session.get("cart", {})
+    if product_id in cart_data:
+        quantity = int((request.json or {}).get("quantity", 1))
+        if quantity > 0:
+            cart_data[product_id]["quantity"] = quantity
+        else:
+            cart_data.pop(product_id)  # số lượng <= 0 thì xóa luôn khỏi giỏ
+        session["cart"] = cart_data
+    return {
+        "status": 200,
+        "total_quantity": sum(item["quantity"] for item in cart_data.values()),
+        "total_amount": sum(item["quantity"] * item["price"] for item in cart_data.values()),
+    }
+
+
+@app.route("/api/cart/<product_id>", methods=["DELETE"])
+def delete_cart_item(product_id):
+    cart_data = session.get("cart", {})
+    if product_id in cart_data:
+        cart_data.pop(product_id)
+        session["cart"] = cart_data
+    return {
+        "status": 200,
+        "total_quantity": sum(item["quantity"] for item in cart_data.values()),
+        "total_amount": sum(item["quantity"] * item["price"] for item in cart_data.values()),
+    }
+
+
+# Bơm tổng số lượng giỏ hàng cho mọi template để hiển thị trên header
+@app.context_processor
+def inject_cart_count():
+    cart_data = session.get("cart", {})
+    return {"cart_count": sum(item["quantity"] for item in cart_data.values())}
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
