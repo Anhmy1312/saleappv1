@@ -47,6 +47,9 @@
                 <td colspan="2"><strong>{{ "{:,.0f}".format(total_amount) }} VNĐ</strong></td>
             </tr>
         </table>
+        <form action="{{ url_for('pay') }}" method="post" style="margin-top: 15px;">
+            <button type="submit"> Thanh toán đơn hàng</button>
+        </form>
         {% else %}
         <p>Giỏ hàng đang trống. <a href="{{ url_for('products') }}">Tiếp tục mua sắm</a></p>
         {% endif %}
@@ -54,7 +57,7 @@
         <p><a href="{{ url_for('products') }}">⬅ Tiếp tục mua sắm</a></p>
     </div>
 
-    // Thông báo khi thao tác thêm, xoá vào giỏ hàng
+    <!-- Thông báo khi thao tác thêm, xoá vào giỏ hàng -->
     <script>
         // Cập nhật số lượng khi người dùng thay đổi ô nhập
         document.querySelectorAll('.cart-quantity').forEach(function (input) {

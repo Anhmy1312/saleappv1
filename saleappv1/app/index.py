@@ -1,11 +1,13 @@
 from functools import wraps
 import os
 import hashlib
-from flask import render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, url_for, session, Response
 from app import app, db, utils
-from app.models import Category, Product, User
+from app.models import Category, Product, User, Receipt, ReceiptDetail
 from flask_admin import Admin, BaseView, expose
 from flask_admin.contrib.sqla import ModelView
+from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 
 
 # --- YC6: Decorator kiểm tra trạng thái login (khớp chuẩn gợi ý đề Bài 3) ---
@@ -252,7 +254,9 @@ def update_cart_item(product_id):
     return {
         "status": 200,
         "total_quantity": sum(item["quantity"] for item in cart_data.values()),
-        "total_amount": sum(item["quantity"] * item["price"] for item in cart_data.values()),
+        "total_amount": sum(
+            item["quantity"] * item["price"] for item in cart_data.values()
+        ),
     }
 
 
@@ -265,8 +269,139 @@ def delete_cart_item(product_id):
     return {
         "status": 200,
         "total_quantity": sum(item["quantity"] for item in cart_data.values()),
-        "total_amount": sum(item["quantity"] * item["price"] for item in cart_data.values()),
+        "total_amount": sum(
+            item["quantity"] * item["price"] for item in cart_data.values()
+        ),
     }
+
+
+# --- YC2 (Bước 3): Thanh toán giỏ hàng, bắt buộc đăng nhập ---
+@app.route("/pay", methods=["POST"])
+def pay():
+    if not session.get("user"):
+        # Chưa đăng nhập -> chuyển sang trang login rồi quay lại giỏ hàng
+        return redirect(url_for("login", next=url_for("cart")))
+
+    cart_data = session.get("cart", {})
+    if not cart_data:
+        return redirect(url_for("cart"))
+
+    receipt = Receipt(user_id=session["user"]["id"])
+    db.session.add(receipt)
+    db.session.flush()  # lấy receipt.id trước khi tạo chi tiết
+
+    for item in cart_data.values():
+        db.session.add(
+            ReceiptDetail(
+                receipt_id=receipt.id,
+                product_id=int(item["id"]),
+                quantity=item["quantity"],
+                unit_price=item["price"],
+            )
+        )
+    db.session.commit()  # Xác nhận giao dịch để lưu sản phẩm vào database.
+
+    session.pop("cart", None)  # thanh toán xong thì xóa giỏ hàng
+    return redirect(url_for("receipt_detail", receipt_id=receipt.id))
+
+
+# --- Trang hóa đơn chi tiết ---
+@app.route("/receipts/<int:receipt_id>")
+@login_required
+def receipt_detail(receipt_id):
+    r = Receipt.query.get_or_404(receipt_id)
+    if r.user_id != session["user"]["id"]:
+        return redirect(url_for("index"))
+    total = sum(
+        d.quantity * d.unit_price for d in r.details
+    )  # d: Đại diện cho từng chi tiết hóa đơn
+    return render_template("receipt.html", receipt=r, total=total)
+
+
+# --- YC2 (Bước 4): Xuất hóa đơn ra file PDF bằng fpdf2 ---
+@app.route("/receipts/<int:receipt_id>/pdf")
+@login_required
+def export_receipt_pdf(receipt_id):
+    r = Receipt.query.get_or_404(receipt_id)
+    if r.user_id != session["user"]["id"]:
+        return redirect(url_for("index"))
+
+    pdf = FPDF()
+    pdf.add_page()
+    # Nhúng font Arial có sẵn trên Windows để hiển thị đúng tiếng Việt
+    pdf.add_font("Arial", "", "C:/Windows/Fonts/arial.ttf")
+    pdf.add_font("Arial", "B", "C:/Windows/Fonts/arialbd.ttf")
+
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(
+        0,
+        10,
+        f"HÓA ĐƠN THANH TOÁN #{r.id}",
+        align="C",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+
+    pdf.set_font("Arial", "", 11)
+    pdf.cell(0, 8, f"Khách hàng: {r.user.name}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(
+        0,
+        8,
+        f"Ngày lập: {r.created_date.strftime('%d/%m/%Y %H:%M')}",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+    pdf.ln(4)
+
+    widths = [12, 78, 20, 38, 42]  # STT, Tên SP, SL, Đơn giá, Thành tiền
+    headers = ["STT", "Tên sản phẩm", "SL", "Đơn giá", "Thành tiền"]
+
+    pdf.set_font("Arial", "B", 10)
+    pdf.set_fill_color(37, 99, 235)
+    pdf.set_text_color(255, 255, 255)
+    for w, h in zip(widths, headers):
+        pdf.cell(w, 8, h, border=1, align="C", fill=True)
+    pdf.ln(8)
+
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Arial", "", 10)
+    total = 0
+    for i, d in enumerate(r.details, start=1):
+        amount = d.quantity * d.unit_price
+        total += amount
+        name = d.product.name if d.product else "(Sản phẩm đã xóa)"
+        pdf.cell(widths[0], 8, str(i), border=1, align="C")
+        pdf.cell(widths[1], 8, name, border=1)
+        pdf.cell(widths[2], 8, str(d.quantity), border=1, align="C")
+        pdf.cell(widths[3], 8, f"{d.unit_price:,.0f}", border=1, align="R")
+        pdf.cell(
+            widths[4],
+            8,
+            f"{amount:,.0f}",
+            border=1,
+            align="R",
+            new_x=XPos.LMARGIN,
+            new_y=YPos.NEXT,
+        )
+
+    pdf.set_font("Arial", "B", 11)
+    pdf.cell(sum(widths[:4]), 8, "TỔNG CỘNG", border=1, align="R")
+    pdf.cell(
+        widths[4],
+        8,
+        f"{total:,.0f} VNĐ",
+        border=1,
+        align="R",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+
+    pdf_bytes = bytes(pdf.output())
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=invoice_{r.id}.pdf"},
+    )
 
 
 # Bơm tổng số lượng giỏ hàng cho mọi template để hiển thị trên header
