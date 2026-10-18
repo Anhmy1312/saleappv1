@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Thống kê doanh thu</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <div class="topbar">
+            <a href="{{ url_for('index') }}"> Trang chủ</a>
+            <a href="/admin"> Quay lại Admin</a>
+        </div>
+
+        <h2>THỐNG KÊ DOANH THU</h2>
+
+        <!-- Bộ lọc theo khoảng thời gian + danh mục -->
+        <form method="get" action="" class="search-form">
+            <input type="date" name="from_date" value="{{ from_date }}">
+            <input type="date" name="to_date" value="{{ to_date }}">
+            <select name="category_id">
+                <option value="">-- Tất cả danh mục --</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}" {% if selected_category==c.id|string %}selected{% endif %}>{{ c.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="submit">Xem thống kê</button>
+        </form>
+
+        <p>
+            <strong>Tổng doanh thu:</strong> {{ "{:,.0f}".format(total_revenue) }} VNĐ
+            &nbsp;|&nbsp;
+            <strong>Tổng số hóa đơn:</strong> {{ receipt_count }}
+        </p>
+
+        <canvas id="revenueChart" height="120"
+                data-labels="{{ labels | tojson | forceescape }}"
+                data-values="{{ values | tojson | forceescape }}"></canvas>
+
+        <table border="1" cellpadding="10" cellspacing="0">
+            <tr>
+                <th>Danh mục</th>
+                <th>Doanh thu</th>
+            </tr>
+            {% for s in stats %}
+            <tr>
+                <td>{{ s.name }}</td>
+                <td>{{ "{:,.0f}".format(s.revenue) }} VNĐ</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="2">Không có dữ liệu trong khoảng thời gian này!</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Dữ liệu lấy từ thuộc tính data-* của canvas (do server Jinja render sẵn)
+        const canvas = document.getElementById('revenueChart');
+        const labels = JSON.parse(canvas.dataset.labels);
+        const values = JSON.parse(canvas.dataset.values);
+
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: values,
+                    backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+</body>
+
+</html>
